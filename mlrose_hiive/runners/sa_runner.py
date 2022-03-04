@@ -30,7 +30,7 @@ Example usage:
 @short_name('sa')
 class SARunner(_RunnerBase):
 
-    def __init__(self, problem, experiment_name, seed, iteration_list, temperature_list, decay_list=None,
+    def __init__(self, problem, experiment_name, seed, iteration_list, temperature_list, decay_list=None, decay_constant_list=None,
                  max_attempts=500, generate_curves=True, **kwargs):
         super().__init__(problem=problem, experiment_name=experiment_name, seed=seed, iteration_list=iteration_list,
                          max_attempts=max_attempts, generate_curves=generate_curves,
@@ -41,10 +41,18 @@ class SARunner(_RunnerBase):
             if decay_list is None:
                 decay_list = [mlrose_hiive.GeomDecay]
             self.decay_list = decay_list
+            self.decay_constant_list = decay_constant_list
             self.use_raw_temp = False
 
     def run(self):
-        temperatures = self.temperature_list if self.use_raw_temp else [d(init_temp=t) for t in self.temperature_list
-                                                                        for d in self.decay_list]
+        temperatures = []
+        # decay_constant_list must be set and there must be exactly one value in decay_list
+        for decay_constant in self.decay_constant_list:
+            if mlrose_hiive.GeomDecay in self.decay_list:
+                temperatures += self.temperature_list if self.use_raw_temp else [d(init_temp=t, decay=decay_constant) for t in self.temperature_list
+                                                                                for d in self.decay_list]
+            else:
+                temperatures += self.temperature_list if self.use_raw_temp else [d(init_temp=t, exp_const=decay_constant) for t in self.temperature_list
+                                                                            for d in self.decay_list]
         return super().run_experiment_(algorithm=mlrose_hiive.simulated_annealing,
                                        schedule=('Temperature', temperatures))
