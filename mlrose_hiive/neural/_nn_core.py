@@ -286,4 +286,8 @@ class _NNCore(_NNBase):
                                    bias=self.bias,
                                    is_classifier=self.is_classifier)
         self.predicted_probs = pp
-        return y_pred
+
+        res = []
+        for y in y_pred:
+            res.append(y[0])
+        return res
